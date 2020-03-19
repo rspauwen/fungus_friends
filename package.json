@@ -1,0 +1,33 @@
+{
+  "name": "nextjs-google-map-react",
+  "version": "1.0.0",
+  "description": "Demo of google-map-react and Next.js",
+  "main": "index.js",
+  "scripts": {
+		"dev": "next",
+    "build": "next build",
+    "start": "next start",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gpolyn/nextjs-google-map-react.git"
+  },
+  "engines" : { "node" : ">8.0.0" },
+  "keywords": [
+    "Next.js",
+    "google-map-react"
+  ],
+  "author": "Gallagher Polyn",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gpolyn/nextjs-google-map-react/issues"
+  },
+  "homepage": "https://github.com/gpolyn/nextjs-google-map-react#readme",
+  "dependencies": {
+    "google-map-react": "1.0.0",
+    "next": "6.0.0",
+    "react": "16.3.2",
+    "react-dom": "16.3.2"
+  }
+}
