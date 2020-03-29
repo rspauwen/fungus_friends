@@ -9,17 +9,22 @@ admin.initializeApp(functions.config().firebase);
 
 const db = admin.firestore();
 const app = express();
-const main = express();
+const server = express();
+
+const cors = require('cors')({ origin: true });
 
 const fungiCollection = 'fungi';
 
-main.use('/api/v1', app);
-// tslint:disable-next-line: deprecation
-main.use(bodyParser.json());
-// tslint:disable-next-line: deprecation
-main.use(bodyParser.urlencoded({ extended: false }));
+server.use(cors);
 
-export const webApi = functions.https.onRequest(main);
+server.use('/api/v1', app);
+// tslint:disable-next-line: deprecation
+server.use(bodyParser.json());
+// tslint:disable-next-line: deprecation
+server.use(bodyParser.urlencoded({ extended: false }));
+
+
+export const webApi = functions.https.onRequest(server);
 
 // Get a specific fungus
 app.get('/fungi/:fungusId', (req, res) => {
