@@ -1,36 +1,43 @@
 import L from 'leaflet';
-
 import React from 'react';
-import { Map, Marker, Popup, TileLayer, Tooltip } from 'react-leaflet';
+import { Map, Marker, TileLayer, Tooltip } from 'react-leaflet';
+import { Fungus } from '../../typings/fungus';
+import { LatLng } from '../../typings/latlng';
 import styles from './FungusMap.module.scss';
-import { Mushroom } from './../mushroom';
+
 
 const API = 'https://fungus-friends.firebaseapp.com/api/v1/';
 const FUNGI_ENDPOINT = 'fungi';
 
-var markerIcon = L.icon({
-    iconUrl: 'marker-icon.png',
-    shadowUrl: 'marker-shadow.png',
-    // iconSize: [38, 95], // size of the icon
-    // shadowSize: [50, 64], // size of the shadow
-    // iconAnchor: [22, 94], // point of the icon which will correspond to marker's location
-    // shadowAnchor: [4, 62],  // the same for the shadow
-    // popupAnchor: [-3, -76] // point from which the popup should open relative to the iconAnchor
+var iconSettings = {
+    mapIconUrl: '<svg version="1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 149 178"><path fill="{mapIconColor}" stroke="#FFF" stroke-width="6" stroke-miterlimit="10" d="M126 23l-6-6A69 69 0 0 0 74 1a69 69 0 0 0-51 22A70 70 0 0 0 1 74c0 21 7 38 22 52l43 47c6 6 11 6 16 0l48-51c12-13 18-29 18-48 0-20-8-37-22-51z"/><circle fill="{mapIconColorInnerCircle}" cx="74" cy="75" r="61"/><circle fill="#FFF" cx="74" cy="75" r="{pinInnerCircleRadius}"/></svg>',
+    mapIconColor: '#cc756b',
+    mapIconColorInnerCircle: '#fff',
+    pinInnerCircleRadius: 48
+};
+
+var markerIcon = L.divIcon({
+    className: "leaflet-data-marker",
+    html: L.Util.template(iconSettings.mapIconUrl, iconSettings),
+    iconAnchor: [12, 32],
+    iconSize: [25, 30],
+    popupAnchor: [0, -28]
 });
 
-
-interface State {
-    fungi: Array<Mushroom>,
-    latlng: {},
-}
+var markerIconActive = L.divIcon({
+    className: "leaflet-data-marker",
+    html: L.Util.template(iconSettings.mapIconUrl, iconSettings),
+    iconAnchor: [18, 42],
+    iconSize: [36, 42],
+    popupAnchor: [0, -30]
+});
 
 export default class FungusMap extends React.Component {
     state = {
         fungi: null,
-        latlng: {
-            lat: 52.080959,
-            lng: 5.235020
-        },
+        currentLoc: new LatLng(
+            52.080959,
+            5.235020)
     }
 
     markers = {
@@ -55,14 +62,16 @@ export default class FungusMap extends React.Component {
                 .then(data => {
                     // console.log('response data:', data);
                     this.setState({
-                        fungi: Object.keys(data.fungi).map((f) => ({
-                            name: data.fungi[f].name,
-                            spots: data.fungi[f].spots,
-                            color: data.fungi[f].color,
-                            latlng: data.fungi[f].latlng,
-                        }))
+                        fungi: Object.keys(data.fungi).map((f) => {
+                            return new Fungus(
+                                data.fungi[f].name,
+                                data.fungi[f].spots,
+                                data.fungi[f].color,
+                                data.fungi[f].latlng,
+                            );
+                        })
                     });
-                    console.log(this.state);
+                    // console.log(this.state);
                 })
                 .catch(e => {
                     console.log(e);
@@ -90,18 +99,22 @@ export default class FungusMap extends React.Component {
 
         const markers = fetchedFungi == null ? null :
 
-            this.state.fungi.map((fungus, i) => {
-                const { _latitude, _longitude } = fungus.latlng
+            this.state.fungi.map((fungus: Fungus, i) => {
+
+                var latlng = [fungus.latlng.lat, fungus.latlng.lng];
+
                 return (
                     <Marker
                         key={fungus.name}
                         icon={markerIcon}
-                        position={[_latitude, _longitude]}
-                        onClick={() => { }}
-                    // ref={node => {
-                    //     if (!node) return
-                    //     this.markers.set(node.leafletElement, fungus.id)
-                    // }}
+                        position={latlng}
+                        onClick={() => {
+                            console.log(`clicked on: ${latlng}`, this.state);
+                            L.marker(fungus.latlng, {
+                                icon: markerIconActive
+                            });
+                        }}
+
                     >
                         <Tooltip>
                             <span>
@@ -111,18 +124,11 @@ export default class FungusMap extends React.Component {
                     </Marker>
                 )
             })
-        // const markers = this.state.hasLocations ? (
-        //     <Marker icon={markerIcon} position={this.state.latlng}>
-        //         <Popup>
-        //             <span>You are here</span>
-        //         </Popup>
-        //     </Marker>
-        // ) : null;
 
         return (
             <Map
                 className={styles.fungus_map}
-                center={this.state.latlng}
+                center={this.state.currentLoc}
                 length={4}
                 onClick={this.handleClick}
                 setView={true}

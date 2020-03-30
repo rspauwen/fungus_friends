@@ -19,7 +19,7 @@ export default class MyApp extends App {
         return (
             <React.Fragment>
                 <Head>
-                    <title>fungi</title>
+                    <title>Fungus Friends</title>
                     <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width" />
                 </Head>
                 <ThemeProvider theme={theme}>
