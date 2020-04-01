@@ -25,8 +25,8 @@ export default function Index() {
   return (
     <Container maxWidth="sm">
       <Box my={4}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Welcom to Fungus Friends!
+        <Typography variant="h4" component="h1" align="center" gutterBottom>
+          Welcome to Fungus Friends!
         </Typography>
 
       </Box>

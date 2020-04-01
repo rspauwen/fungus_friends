@@ -1,8 +1,8 @@
 import L from 'leaflet';
 import React from 'react';
 import { Map, Marker, TileLayer, Tooltip } from 'react-leaflet';
-import { Fungus } from '../../typings/fungus';
-import { LatLng } from '../../typings/latlng';
+import { Fungus } from '../model/fungus';
+import { LatLng } from '../model/latlng';
 import styles from './FungusMap.module.scss';
 
 
@@ -32,16 +32,21 @@ var markerIconActive = L.divIcon({
     popupAnchor: [0, -30]
 });
 
-export default class FungusMap extends React.Component {
-    state = {
-        fungi: null,
-        currentLoc: new LatLng(
-            52.080959,
-            5.235020)
-    }
+interface MyProps { }
 
-    markers = {
-        set: null,
+interface MyState {
+    currentLoc: LatLng,
+    hasLocation: boolean,
+    fungi: Array<Fungus>,
+}
+
+export default class FungusMap extends React.Component<MyProps, MyState> {
+    state = {
+        currentLoc: new LatLng(
+            52.081059,
+            5.235720),
+        hasLocation: true,
+        fungi: null,
     }
 
     private mapRef;
@@ -60,9 +65,9 @@ export default class FungusMap extends React.Component {
             fetch(API + FUNGI_ENDPOINT)
                 .then(response => response.json())
                 .then(data => {
-                    // console.log('response data:', data);
-                    this.setState({
-                        fungi: Object.keys(data.fungi).map((f) => {
+
+                    if (Object.keys(data.fungi).length > 0) {
+                        const fetchedFungi = Object.keys(data.fungi).map((f) => {
                             return new Fungus(
                                 data.fungi[f].name,
                                 data.fungi[f].spots,
@@ -70,8 +75,17 @@ export default class FungusMap extends React.Component {
                                 data.fungi[f].latlng,
                             );
                         })
-                    });
-                    // console.log(this.state);
+
+                        this.setState({
+                            fungi: fetchedFungi
+                        });
+
+                        // this.setState(prevState => {
+                        //     const markerData = [...prevState];
+                        //     fungiMarkers[i].isSelected = true;
+                        //     return { markerData: markerData };
+                        // });
+                    }
                 })
                 .catch(e => {
                     console.log(e);
@@ -81,67 +95,67 @@ export default class FungusMap extends React.Component {
 
     }
 
-    handleClick = () => {
-        this.mapRef.current.leafletElement.locate();
-    };
+    // handleClick = () => {
+    //     this.mapRef.current.leafletElement.locate();
+    // };
 
-    handleLocationFound = currentLoc => {
-        console.log('currentLoc:', currentLoc);
-        this.setState({
-            hasLocation: true,
-            latlng: currentLoc.latlng
-        });
-    };
+    // handleLocationFound = loc => {
+    //     console.log('currentLoc:', loc);
+    //     this.setState({
+    //         hasLocation: true,
+    //         currentLoc: new LatLng(loc.latitude, loc.longitude),
+    //     });
+    // };
 
 
     render() {
-        let fetchedFungi = this.state.fungi;
-
-        const markers = fetchedFungi == null ? null :
-
-            this.state.fungi.map((fungus: Fungus, i) => {
-
-                var latlng = [fungus.latlng.lat, fungus.latlng.lng];
-
-                return (
-                    <Marker
-                        key={fungus.name}
-                        icon={markerIcon}
-                        position={latlng}
-                        onClick={() => {
-                            console.log(`clicked on: ${latlng}`, this.state);
-                            L.marker(fungus.latlng, {
-                                icon: markerIconActive
-                            });
-                        }}
-
-                    >
-                        <Tooltip>
-                            <span>
-                                {fungus.name}
-                            </span>
-                        </Tooltip>
-                    </Marker>
-                )
-            })
-
+        const fungi = this.state.fungi ?? [];
+        // console.log(this.state.fungi)
         return (
-            <Map
-                className={styles.fungus_map}
-                center={this.state.currentLoc}
-                length={4}
-                onClick={this.handleClick}
-                setView={true}
-                onLocationfound={this.handleLocationFound}
-                ref={this.mapRef}
-                zoom={17}
-            >
-                <TileLayer
-                    attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                {markers}
-            </Map>
+            < div >
+                {/* {fungi !== null && fungi.length > 0 ? (
+                    'Loaded') : ('Loading...')
+                } */}
+                <Map
+                    className={styles.fungus_map}
+                    center={this.state.currentLoc}
+                    length={4}
+                    ref={this.mapRef}
+                    setView={true}
+                    zoom={17}
+                // onClick={this.handleClick}
+                // onLocationfound={this.handleLocationFound}
+                >
+                    <TileLayer
+                        attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    {fungi.map((fungus, i) => (
+
+                        <Marker
+                            key={fungus.name}
+                            icon={fungus.isSelected ? markerIconActive : markerIcon}
+                            position={[fungus.latlng.lat, fungus.latlng.lng]}
+                            onClick={() => {
+                                this.state.fungi.forEach((fungus, index) => fungus.isSelected = index == i);
+
+                                this.setState(() => {
+                                    return this.state;
+                                });
+
+                                // console.log(`clicked on: '${fungus.name}'`, this.state.fungi);
+                            }}
+
+                        >
+                            <Tooltip>
+                                <span>
+                                    {fungus.name}
+                                </span>
+                            </Tooltip>
+                        </Marker>
+                    ))}
+                </Map>
+            </div >
         );
     }
 }
