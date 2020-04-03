@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import React from 'react';
 
 
-const FungusMapComponent = dynamic(() => import('../components/fungus-map'), {
+const FungusMapComponent = dynamic(() => import('../components/FungusMap/FungusMap'), {
   ssr: false,
   loading: () => (
     <div style={{ textAlign: 'center', paddingTop: 20 }}>

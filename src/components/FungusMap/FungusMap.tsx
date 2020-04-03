@@ -1,9 +1,10 @@
 import L from 'leaflet';
 import React from 'react';
-import { Map, Marker, TileLayer, Tooltip } from 'react-leaflet';
-import { Fungus } from '../model/fungus';
-import { LatLng } from '../model/latlng';
+import { Map, Marker, Popup, TileLayer, Tooltip } from 'react-leaflet';
+import { Fungus } from '../../model/fungus';
+import { LatLng } from '../../model/latlng';
 import styles from './FungusMap.module.scss';
+import FungusCard from '../FungusCard/FungusCard';
 
 
 const API = 'https://fungus-friends.firebaseapp.com/api/v1/';
@@ -57,10 +58,6 @@ export default class FungusMap extends React.Component<MyProps, MyState> {
     }
 
     componentDidMount() {
-        // this.mapRef.current.leafletElement.locate({
-        //     setView: true
-        // });
-
         if (this.state.fungi == null) {
             fetch(API + FUNGI_ENDPOINT)
                 .then(response => response.json())
@@ -79,12 +76,6 @@ export default class FungusMap extends React.Component<MyProps, MyState> {
                         this.setState({
                             fungi: fetchedFungi
                         });
-
-                        // this.setState(prevState => {
-                        //     const markerData = [...prevState];
-                        //     fungiMarkers[i].isSelected = true;
-                        //     return { markerData: markerData };
-                        // });
                     }
                 })
                 .catch(e => {
@@ -130,7 +121,7 @@ export default class FungusMap extends React.Component<MyProps, MyState> {
                         attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
-                    {fungi.map((fungus, i) => (
+                    {fungi.map((fungus: Fungus, i) => (
 
                         <Marker
                             key={fungus.name}
@@ -152,6 +143,8 @@ export default class FungusMap extends React.Component<MyProps, MyState> {
                                     {fungus.name}
                                 </span>
                             </Tooltip>
+
+                            <Popup>{FungusCard(fungus)}</Popup>
                         </Marker>
                     ))}
                 </Map>
