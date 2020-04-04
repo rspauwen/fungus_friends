@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@material-ui/core": "^4.9.8",
+    "@material-ui/icons": "^4.9.1",
     "@material-ui/styles": "^4.9.6",
     "@types/next": "^9.0.0",
     "leaflet": "^1.6.0",

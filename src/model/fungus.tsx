@@ -27,6 +27,7 @@ interface IFungus {
     latlng: LatLng;
 }
 
+// TODO: write test for Fungus class
 
 export class Fungus implements IFungus {
     name: string;

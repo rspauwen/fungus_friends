@@ -1,0 +1,27 @@
+.fungus_drawer {
+    $defaultPixels: 12px;
+    
+    > div:not(.fungus_drawer_paper) {
+        opacity: 0.25 !important;
+    }
+
+    &_list {
+        overflow-y: scroll;
+        width: 250px;
+    }
+
+    &_filter,
+    &_search,
+    &_add {
+        padding: $defaultPixels;
+        width: 100%;
+    }
+
+    hr {
+        margin-bottom: $defaultPixels;
+    }
+
+    &_add > div {
+        margin-bottom: $defaultPixels;
+    }
+}

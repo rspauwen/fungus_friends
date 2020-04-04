@@ -1,6 +1,13 @@
 .fungus_card {
-    &_media {
-        background: pink;
+    &_image {
+        opacity: 0.2;
+        transition: opacity 1s ease-in-out;
+    }
+
+    &:hover {
+        .fungus_card_image {
+            opacity: 0.8;
+        }
     }
 
     a {
