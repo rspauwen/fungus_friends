@@ -29,41 +29,47 @@ var markerIcon = L.divIcon({
     popupAnchor: [0, -28]
 });
 
-var markerIconActive = L.divIcon({
-    className: "leaflet-data-marker",
-    html: L.Util.template(iconSettings.mapIconUrl, iconSettings),
-    iconAnchor: [18, 42],
-    iconSize: [36, 42],
-    popupAnchor: [0, -30]
-});
+// var markerIconActive = L.divIcon({
+//     className: "leaflet-data-marker",
+//     html: L.Util.template(iconSettings.mapIconUrl, iconSettings),
+//     iconAnchor: [18, 42],
+//     iconSize: [36, 42],
+//     popupAnchor: [0, -30]
+// });
 
 interface MyProps { }
 
 interface MyState {
-    fungi: Array<Fungus>,
     currentLoc: LatLng,
     clickedLoc: LatLng,
+    fungi: Array<Fungus>,
+    markers: Array<Marker>,
+    addEnabled: boolean
 }
 
 export default class FungusMap extends React.Component<MyProps, MyState> {
     state = {
-        fungi: null,
         currentLoc: new LatLng(
             52.081059,
             5.235720),
         clickedLoc: null,
+        fungi: null,
+        markers: null,
+        addEnabled: false,
     }
 
     private mapRef;
     private drawerRef;
+    private markerRefs;
 
     constructor(props) {
         super(props)
         this.mapRef = React.createRef()
         this.drawerRef = React.createRef()
+        this.markerRefs = [];
     }
 
-    componentDidMount() {
+    async componentDidMount() {
         if (this.state.fungi == null) {
             fetch(API + FUNGI_ENDPOINT)
                 .then(response => response.json())
@@ -82,6 +88,8 @@ export default class FungusMap extends React.Component<MyProps, MyState> {
                         this.setState({
                             fungi: fetchedFungi
                         });
+
+                        this.addMarkers();
                     }
                 })
                 .catch(e => {
@@ -89,49 +97,116 @@ export default class FungusMap extends React.Component<MyProps, MyState> {
                     return e;
                 });
         }
-
     }
 
-    deselectAllFungi() {
-        if (this.state.fungi == null) return;
+    addMarkers = async () => {
+        const markers =
+            this.state.fungi != null ? this.state.fungi.filter((f: Fungus) => !f.isHidden).map((fungus: Fungus, i) => (
+                <Marker
+                    key={fungus.name}
+                    icon={markerIcon}
+                    position={[fungus.latlng.lat, fungus.latlng.lng]}
+                    ref={this.handleMarkerRef.bind(this, i)}
+                    onclick={() => {
+                        this.markerClick(i);
+                    }}
+                >
+                    <Tooltip>
+                        <span>
+                            {fungus.name}
+                        </span>
+                    </Tooltip>
+                    <Popup maxWidth="auto">
+                        <FungusCard fungus={fungus} />
+                    </Popup>
+                </Marker>
+            )) : [];
 
-        this.setState(() => {
-            this.state.fungi.forEach((f: Fungus) => f.isSelected = false);
-            return this.state;
+        this.setState({
+            markers: markers
         });
+    }
+
+    addFungusCallbackFunction = (enableAdd: boolean, addFungus: Fungus = null) => {
+        if (enableAdd) {
+            this.setState({ addEnabled: true });
+        } else {
+            this.setState({ addEnabled: false, clickedLoc: null });
+
+            if (addFungus.name != null) {
+                // add fungus to fungi & create marker
+                const addFungi = this.state.fungi;
+                addFungi.push(addFungus);
+                this.setState({ fungi: addFungi });
+                this.addMarkers().then(() => {
+                    // highlight the newly created fungus
+                    this.searchCallbackFunction(addFungus);
+                });
+            }
+        }
     }
 
     filterCallbackFunction = (filteredFungi: Array<Fungus>) => {
         this.setState({ fungi: filteredFungi })
     }
 
-    searchCallbackFunction = (fungusName: String) => {
-        this.setState(() => {
-            this.state.fungi.forEach((f: Fungus) => f.isSelected = f.name == fungusName);
-            return this.state;
-        });
+    searchCallbackFunction = (fungus: Fungus) => {
+        const index = fungus != null ? this.state.markers.findIndex(f => f.key === fungus.name) : -1;
+        const searchedFungi = this.state.fungi;
+
+        searchedFungi[index] = fungus; // ensure it's not hidden;
+        this.setState({ fungi: searchedFungi });
+
+        if (index == -1) {
+            this.mapRef.current.leafletElement.closePopup();
+            return;
+        }
+        this.markerClick(index);
     }
 
     handleClickOnMap = (e) => {
         const clickedLoc = new LatLng(e.latlng.lat, e.latlng.lng);
         this.setState({ clickedLoc: clickedLoc })
-        this.deselectAllFungi();
+    };
+
+    markerClick(index) {
+        const markerPosition = this.state.markers[index].props.position;
+        const cardOffset = 0.005;
+
+        this.setState(
+            {
+                currentLoc: new LatLng(markerPosition[0] + cardOffset, markerPosition[1]),
+            },
+            () => {
+                if (this.markerRefs[index]) {
+                    this.markerRefs[index].leafletElement.openPopup();
+                }
+            }
+        );
+    }
+
+    handleMarkerRef = (index, node) => {
+        this.markerRefs[index] = node;
     };
 
     render() {
         const fungi = this.state.fungi ?? [];
+
+        const menuButton = this.drawerRef.current == null || this.drawerRef.current.state.open ? null :
+            <Button onClick={() => { this.drawerRef.current.openDrawer() }}>
+                <MenuIcon />
+            </Button>
+
         return (
-            <Container maxWidth="md">
+            <Container maxWidth="lg">
                 <Box my={4} style={{ display: "flex", justifyContent: "space-between" }}>
                     <Typography variant="h4" component="h1" gutterBottom>
-                        Welcome to Fungus Friends!
+                        Welcome to Ruvar's Fungus Friends Finder!
                     </Typography>
-                    <Button onClick={() => { this.drawerRef.current.openDrawer() }}>
-                        <MenuIcon />
-                    </Button>
+                    {menuButton}
                 </Box>
                 <Map
-                    className={styles.fungus_map}
+                    className={`${styles.fungus_map} ${this.state.addEnabled ? styles.add_enabled : ""}`}
                     center={this.state.currentLoc}
                     length={4}
                     ref={this.mapRef}
@@ -143,36 +218,16 @@ export default class FungusMap extends React.Component<MyProps, MyState> {
                         attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
-                    {fungi.filter((f: Fungus) => !f.isHidden).map((fungus: Fungus, i) => (
-                        <Marker
-                            key={fungus.name}
-                            icon={fungus.isSelected ? markerIconActive : markerIcon}
-                            position={[fungus.latlng.lat, fungus.latlng.lng]}
-                            onClick={() => {
-                                this.state.fungi[i].isSelected = true;
 
-                                this.setState(() => {
-                                    return this.state;
-                                });
+                    {/* {fungi.filter((f: Fungus) => !f.isHidden).map((fungus: Fungus, i) => ( */}
+                    {fungi.map((f: Fungus, i) => { return !f.isHidden && this.state.markers != null ? this.state.markers[i] ?? null : null })}
 
-                                // console.log(`clicked on: '${fungus.name}'`, this.state.fungi);
-                            }}
-
-                        >
-                            <Tooltip>
-                                <span>
-                                    {fungus.name}
-                                </span>
-                            </Tooltip>
-
-                            <Popup>{FungusCard(fungus)}</Popup>
-                        </Marker>
-                    ))}
                 </Map>
                 <FungusDrawer fungi={fungi}
                     clickedLoc={this.state.clickedLoc}
                     filterCallback={this.filterCallbackFunction}
                     searchCallBack={this.searchCallbackFunction}
+                    addFungusCallBack={this.addFungusCallbackFunction}
                     ref={this.drawerRef} />
             </Container>
         );

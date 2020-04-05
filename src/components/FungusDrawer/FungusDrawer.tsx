@@ -1,29 +1,28 @@
-import { Divider, Drawer, FormControl, FormHelperText, InputLabel, List, ListItem, ListItemIcon, ListItemText, MenuItem, Select, TextField } from '@material-ui/core';
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, Divider, Drawer, FormControl, FormHelperText, InputLabel, List, ListItem, ListItemIcon, ListItemText, MenuItem, Select, TextField } from '@material-ui/core';
 import AddLocationIcon from '@material-ui/icons/AddLocation';
 import BubbleChartIcon from '@material-ui/icons/BubbleChart';
 import ClearAllIcon from '@material-ui/icons/ClearAll';
 import FilterListIcon from '@material-ui/icons/FilterList';
 import SearchIcon from '@material-ui/icons/Search';
 import React from 'react';
-import { Fungus } from '../../model/fungus';
+import { Color, Fungus, Spots } from '../../model/fungus';
 import { LatLng } from '../../model/latlng';
 import styles from './FungusDrawer.module.scss';
 
-export default class FungusDrawer extends React.Component<{ fungi, clickedLoc, filterCallback, searchCallBack }> {
+export default class FungusDrawer extends React.Component
+    <{ fungi, clickedLoc, filterCallback, searchCallBack, addFungusCallBack }> {
+
     state = {
-        open: false,
+        open: true,
         searchedFungi: [],
         searchTerm: '',
         selectedColor: '',
         selectedSpots: '',
+        addEnabled: false,
+        addFungusModalOpened: false,
+        dialogColor: '',
+        dialogSpots: '',
     };
-
-    private searchInputRef;
-
-    constructor(props) {
-        super(props)
-        this.searchInputRef = React.createRef()
-    }
 
     openDrawer = () => {
         this.setState({ open: true })
@@ -67,7 +66,7 @@ export default class FungusDrawer extends React.Component<{ fungi, clickedLoc, f
 
     handleClearSearch = () => {
         this.setState({ searchedFungi: [], searchTerm: '' })
-        this.props.searchCallBack('');
+        this.props.searchCallBack(null);
     };
 
     handleSearch = (e) => {
@@ -82,14 +81,62 @@ export default class FungusDrawer extends React.Component<{ fungi, clickedLoc, f
         this.setState({ searchedFungi: searchedFungi, searchTerm: searchTerm });
     };
 
-    handleSearchItemClicked = (f: Fungus) => {
-        if (f.isHidden) {
-            // TBD: ask to make it visible?
-        } else {
-            this.props.searchCallBack(f.name);
-            // TODO: expand the popup
-            this.closeDrawer();
+    handleSearchItemClicked = (fungus: Fungus) => {
+        if (fungus.isHidden) {
+            if (window.confirm('Sorry, this fungus is hidden due to filters. \n\nDo you want to make it visible again?')) {
+                fungus.isHidden = false;
+            } else {
+                return;
+            }
         }
+
+        this.props.searchCallBack(fungus);
+    };
+
+
+    handleAddFungusClicked = () => {
+        this.handleClearFilters(); // fix
+        this.setState({ addEnabled: true })
+        this.props.addFungusCallBack(true);
+    };
+
+    handleAddFungusCloseModal = (addFungus) => {
+        this.props.addFungusCallBack(false, addFungus);
+        this.setState({ addEnabled: false });
+    };
+
+    handleAddFungusConfirmation = (e) => {
+        // TODO: add proper form validations (incl. unique name) + send to Firebase
+
+        e.preventDefault();
+        const data = new FormData(e.target);
+
+        const lat = data.get('lat');
+        const lng = data.get('lng');
+        const name = data.get('name');
+        const color = data.get('color');
+        const spots = data.get('spots');
+
+        if (lat == "" || lng == "" || name == "" || color == "" || spots == "") {
+            window.alert('At leeast one of the form values is empty!');
+            return;
+        }
+
+        const loc = {
+            _latitude: parseFloat(lat.toString()),
+            _longitude: parseFloat(lng.toString())
+        }
+
+        const addFungus = new Fungus(name.toString(), spots.toString(), color.toString(), loc, true);
+
+        this.handleAddFungusCloseModal(addFungus);
+    }
+
+    handleChangeColor = (event: React.ChangeEvent<{ value: unknown }>) => {
+        this.setState({ dialogColor: event.target.value as string });
+    };
+    handleChangeSpots = (event: React.ChangeEvent<{ value: unknown }>) => {
+        this.setState({ dialogSpots: event.target.value as string });
     };
 
 
@@ -107,28 +154,75 @@ export default class FungusDrawer extends React.Component<{ fungi, clickedLoc, f
                 <ListItemText primary="Clear search" />
             </ListItem> : null;
 
-        // TBD: move to a separate modal instead of inside the drawer
-        const addFungusClickedLocation = this.props.clickedLoc != null ? (
-            <div>
-                <ListItem key='fungus_drawer_add'>
-                    <ListItemIcon>{<AddLocationIcon />}</ListItemIcon>
-                    <ListItemText secondary="Clicked location" />
-                </ListItem>
 
-                <form className={styles.fungus_drawer_add} noValidate autoComplete="off">
-                    <TextField value={this.props.clickedLoc.lat} variant="filled"
-                        label="Latitude" InputProps={{ readOnly: true }} />
-                    <TextField value={this.props.clickedLoc.lng} variant="filled"
-                        label="Longitude" InputProps={{ readOnly: true }} />
-                    <TextField label="Name" />
-                    <TextField label="Color" /> {/* TODO: add select box */}
-                    <TextField label="Spots" /> {/* TODO: add select box */}
-                    <ListItem button key="add_location" onClick={() => { }}>
-                        <ListItemText primary="Add fungus" />
-                    </ListItem>
-                </form>
-            </div>
-        ) : null;
+        const addFungusDialog = this.props.clickedLoc == null ? null : (
+            <Dialog
+                className={styles.fungus_dialog_add}
+                open={this.props.clickedLoc != null}
+                onClose={this.handleAddFungusCloseModal}
+            >
+                <DialogContent>
+                    <DialogContentText>
+                        To add a new Fungus, please fill in the following fields.
+                        </DialogContentText>
+
+                    <form className={styles.fungus_dialog_add_form}
+                        id="dialogForm" onSubmit={this.handleAddFungusConfirmation}>
+                        <TextField value={this.props.clickedLoc?.lat} variant="filled" fullWidth
+                            id="lat" name="lat" label="Latitude" InputProps={{ readOnly: true }} />
+                        <TextField value={this.props.clickedLoc?.lng} variant="filled" fullWidth
+                            id="lng" name="lng" label="Longitude" InputProps={{ readOnly: true }} />
+                        <TextField label="Name" autoFocus id="name" name="name" fullWidth />
+                        <FormControl fullWidth >
+                            <InputLabel id="drawer_dialog_color_label">Color</InputLabel>
+                            <Select labelId="drawer_dialog_color_label" value={this.state.dialogColor} onChange={this.handleChangeColor}
+                                id="drawer_dialog_color_input" name="color" autoWidth>
+                                <MenuItem value="">
+                                    <em></em>
+                                </MenuItem>
+                                {colors.map((c) => (
+                                    <MenuItem value={c} key={c}>
+                                        <em>{c}</em>
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                            <FormHelperText>Select a color</FormHelperText>
+                        </FormControl>
+                        <FormControl fullWidth>
+                            <InputLabel id="drawer_dialog_spots_label">Spots</InputLabel>
+                            <Select labelId="drawer_dialog_spots_label" value={this.state.dialogSpots} onChange={this.handleChangeSpots}
+                                id="drawer_dialog_spot_input" name="spots" autoWidth>
+                                <MenuItem value="">
+                                    <em></em>
+                                </MenuItem>
+                                {spots.map((s) => (
+                                    <MenuItem value={s} key={s}>
+                                        <em>{s}</em>
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                            <FormHelperText>Select type of spots</FormHelperText>
+                        </FormControl>
+                    </form>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={this.handleAddFungusCloseModal} color="secondary">
+                        Cancel
+                    </Button>
+                    <Button type="submit" form="dialogForm" color="primary">
+                        Confirm
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        );
+
+
+        const addFungusButton = !this.state.addEnabled ?
+            <ListItem button key="add_location" onClick={() => { this.handleAddFungusClicked() }}>
+                <ListItemIcon>{<AddLocationIcon />}</ListItemIcon>
+                <ListItemText primary="Add fungus" />
+            </ListItem> : null
+
 
         const drawerContent = (
             <div className={styles.fungus_drawer_list}>
@@ -146,13 +240,12 @@ export default class FungusDrawer extends React.Component<{ fungi, clickedLoc, f
                     </ListItem>
                     <div className={styles.fungus_drawer_filter} key="filter_color">
                         <FormControl fullWidth={true} variant="outlined">
-                            <InputLabel id="demo-simple-select-outlined-label">Color</InputLabel>
+                            <InputLabel id="drawer_filter_color_label">Color</InputLabel>
                             <Select
-                                labelId="fungus_drawer_filter_color-label"
-                                id="fungus_drawer_filter_color"
+                                labelId="drawer_filter_color_label"
+                                id="drawer_filter_color_input"
                                 value={this.state.selectedColor}
                                 onChange={this.handleFilterColor}
-                                label="Color"
                                 autoWidth
                             >
                                 <MenuItem value="">
@@ -169,13 +262,12 @@ export default class FungusDrawer extends React.Component<{ fungi, clickedLoc, f
                     </div>
                     <div className={`${styles.fungus_drawer_filter}`} key="filter_spots">
                         <FormControl fullWidth={true} variant="outlined">
-                            <InputLabel id="demo-simple-select-outlined-label">Spots</InputLabel>
+                            <InputLabel id="drawer_filter_spots_label">Spots</InputLabel>
                             <Select
-                                labelId="fungus_drawer_filter_color-label"
-                                id="fungus_drawer_filter_color"
+                                labelId="drawer_filter_spots_label"
+                                id="drawer_filter_spots_input"
                                 value={this.state.selectedSpots}
                                 onChange={this.handleFilterSpots}
-                                label="Spots"
                                 autoWidth
                             >
                                 <MenuItem value="">
@@ -213,8 +305,8 @@ export default class FungusDrawer extends React.Component<{ fungi, clickedLoc, f
                     {clearSearchButton}
 
                     <Divider variant="middle" />
-
-                    {addFungusClickedLocation}
+                    {addFungusButton}
+                    {addFungusDialog}
                 </List>
             </div>
         );
@@ -227,7 +319,8 @@ export default class FungusDrawer extends React.Component<{ fungi, clickedLoc, f
                         classes={{ root: styles.fungus_drawer, paper: styles.fungus_drawer_paper }}
                         open={this.state.open}
                         onClose={this.closeDrawer}
-                        elevation={0}
+                        variant="permanent"
+                    // elevation={0}
                     >
                         {drawerContent}
                     </Drawer>

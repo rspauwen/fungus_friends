@@ -27,23 +27,23 @@ interface IFungus {
     latlng: LatLng;
 }
 
-// TODO: write test for Fungus class
+// TODO: validation for Fungus class
 
 export class Fungus implements IFungus {
     name: string;
     spots: Spots;
     color: Color;
     latlng: LatLng;
+    isCustom: boolean;
     isHidden: boolean;
-    isSelected: boolean;
 
-    constructor(name: string, spots: Spots, color: Color, latlng: LatLng) {
+    constructor(name, spots, color, latlng, isCustom = false) {
         this.name = name;
         this.spots = spots;
         this.color = color;
         this.latlng = new LatLng(latlng['_latitude'], latlng['_longitude']);
+        this.isCustom = isCustom;
         this.isHidden = false;
-        this.isSelected = false;
     }
 
 }

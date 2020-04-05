@@ -31,8 +31,8 @@
     "react": "16.13.1",
     "react-dom": "^16.13.1",
     "react-leaflet": "^2.6.3",
-    "react-unsplash-wrapper": "^1.1.5",
-    "sass": "^1.26.3"
+    "sass": "^1.26.3",
+    "unsplash-js": "^6.0.0"
   },
   "devDependencies": {
     "@types/node": "^12.12.31",

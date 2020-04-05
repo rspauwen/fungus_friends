@@ -1,12 +1,17 @@
 .fungus_card {
+    width: 400px;
+
     &_image {
-        opacity: 0.2;
+        position: relative;
+        opacity: 0.5;
         transition: opacity 1s ease-in-out;
+        // height: 200px;
+        width: 400px;
     }
 
     &:hover {
         .fungus_card_image {
-            opacity: 0.8;
+            opacity: 1;
         }
     }
 

@@ -1,5 +1,6 @@
+$defaultPixels: 12px;
+
 .fungus_drawer {
-    $defaultPixels: 12px;
     
     > div:not(.fungus_drawer_paper) {
         opacity: 0.25 !important;
@@ -22,6 +23,13 @@
     }
 
     &_add > div {
+        margin-bottom: $defaultPixels;
+    }
+}
+
+.fungus_dialog_add {
+    &_form > div {
+        height: 60px;
         margin-bottom: $defaultPixels;
     }
 }

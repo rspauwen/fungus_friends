@@ -1,4 +1,9 @@
 .fungus_map {
-    height: 600px;
+    height: 85vh;
     width: 100%;
+
+
+    &.add_enabled {
+        cursor: crosshair;
+    }
 }
