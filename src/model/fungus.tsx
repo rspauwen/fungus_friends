@@ -27,9 +27,10 @@ interface IFungus {
     latlng: LatLng;
 }
 
-// TODO: validation for Fungus class
+// TODO: stricter interfaces implementation
 
 export class Fungus implements IFungus {
+    id: string;
     name: string;
     spots: Spots;
     color: Color;
@@ -37,7 +38,8 @@ export class Fungus implements IFungus {
     isCustom: boolean;
     isHidden: boolean;
 
-    constructor(name, spots, color, latlng, isCustom = false) {
+    constructor(id, name, spots, color, latlng, isCustom = false) {
+        this.id = id;
         this.name = name;
         this.spots = spots;
         this.color = color;

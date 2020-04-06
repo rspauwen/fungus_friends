@@ -19,3 +19,10 @@
         text-decoration: none;
     }
 }
+
+.fungus_delete_dialog {
+    &_buttons {
+        display: flex;
+        justify-content: space-evenly;
+    }
+}

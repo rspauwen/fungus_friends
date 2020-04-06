@@ -25,6 +25,7 @@
         "next-env.d.ts",
         "**/*.ts",
         "**/*.tsx",
-        "src/pages/_app.js"
+        "src/pages/_app.js",
+        "next.config.js"
     ]
 }

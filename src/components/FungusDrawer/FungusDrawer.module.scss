@@ -1,7 +1,6 @@
 $defaultPixels: 12px;
 
 .fungus_drawer {
-    
     > div:not(.fungus_drawer_paper) {
         opacity: 0.25 !important;
     }
@@ -31,5 +30,12 @@ $defaultPixels: 12px;
     &_form > div {
         height: 60px;
         margin-bottom: $defaultPixels;
+    }
+}
+
+.fungus_unhide_dialog {
+    &_buttons {
+        display: flex;
+        justify-content: space-evenly;
     }
 }

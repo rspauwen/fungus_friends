@@ -5,12 +5,14 @@ import ClearAllIcon from '@material-ui/icons/ClearAll';
 import FilterListIcon from '@material-ui/icons/FilterList';
 import SearchIcon from '@material-ui/icons/Search';
 import React from 'react';
-import { Color, Fungus, Spots } from '../../model/fungus';
-import { LatLng } from '../../model/latlng';
+import { Fungus } from '../../model/fungus';
+import FungusService from '../../services/FungusService';
 import styles from './FungusDrawer.module.scss';
+import { toast } from 'react-toastify';
+import { confirmAlert } from 'react-confirm-alert';
 
 export default class FungusDrawer extends React.Component
-    <{ fungi, clickedLoc, filterCallback, searchCallBack, addFungusCallBack }> {
+    <{ fungi, clickedLoc, addFungusCallBack, filterCallback, refreshMapCallback, searchCallBack }> {
 
     state = {
         open: true,
@@ -20,6 +22,7 @@ export default class FungusDrawer extends React.Component
         selectedSpots: '',
         addEnabled: false,
         addFungusModalOpened: false,
+        addingFungus: false,
         dialogColor: '',
         dialogSpots: '',
     };
@@ -82,15 +85,33 @@ export default class FungusDrawer extends React.Component
     };
 
     handleSearchItemClicked = (fungus: Fungus) => {
-        if (fungus.isHidden) {
-            if (window.confirm('Sorry, this fungus is hidden due to filters. \n\nDo you want to make it visible again?')) {
-                fungus.isHidden = false;
-            } else {
-                return;
-            }
+        if (!fungus.isHidden) {
+            this.props.searchCallBack(fungus);
+            return
         }
 
-        this.props.searchCallBack(fungus);
+        const unhideDialog = ({ onClose }) => {
+            const handleClickedNo = () => {
+                onClose();
+            }
+            const handleClickedYes = () => {
+                onClose();
+                fungus.isHidden = false;
+                this.props.searchCallBack(fungus);
+            }
+            return (
+                <div className={styles.fungus_unhide_dialog}>
+                    <h3>{`Fungus "${fungus.name}" is filtered at the moment`}</h3>
+                    <p>Do you want to make it visible again?</p>
+                    <div className={styles.fungus_unhide_dialog_buttons}>
+                        <button onClick={handleClickedNo}>No</button>
+                        <button onClick={handleClickedYes}>Yes</button>
+                    </div>
+                </div>
+            );
+        }
+
+        confirmAlert({ customUI: unhideDialog })
     };
 
 
@@ -100,13 +121,13 @@ export default class FungusDrawer extends React.Component
         this.props.addFungusCallBack(true);
     };
 
-    handleAddFungusCloseModal = (addFungus) => {
-        this.props.addFungusCallBack(false, addFungus);
+    handleAddFungusCloseModal = () => {
         this.setState({ addEnabled: false });
+        this.props.addFungusCallBack(false);
     };
 
     handleAddFungusConfirmation = (e) => {
-        // TODO: add proper form validations (incl. unique name) + send to Firebase
+        // TODO: add proper form validations (incl. unique name)
 
         e.preventDefault();
         const data = new FormData(e.target);
@@ -118,7 +139,8 @@ export default class FungusDrawer extends React.Component
         const spots = data.get('spots');
 
         if (lat == "" || lng == "" || name == "" || color == "" || spots == "") {
-            window.alert('At leeast one of the form values is empty!');
+            toast.error("Oops, at least one of the form values is empty!");
+            // TODO: set focus to first field with missing value
             return;
         }
 
@@ -127,14 +149,25 @@ export default class FungusDrawer extends React.Component
             _longitude: parseFloat(lng.toString())
         }
 
-        const addFungus = new Fungus(name.toString(), spots.toString(), color.toString(), loc, true);
+        const fungus = new Fungus('', name.toString(), spots.toString(), color.toString(), loc, true);
 
-        this.handleAddFungusCloseModal(addFungus);
+        this.setState({ addingFungus: true });
+
+        // add fungus to our firebase
+        FungusService.addFungus(fungus).then((result) => {
+            this.setState({ addingFungus: false });
+
+            if (result == true) {
+                this.handleAddFungusCloseModal();
+                this.props.refreshMapCallback();
+            }
+        });
     }
 
     handleChangeColor = (event: React.ChangeEvent<{ value: unknown }>) => {
         this.setState({ dialogColor: event.target.value as string });
     };
+
     handleChangeSpots = (event: React.ChangeEvent<{ value: unknown }>) => {
         this.setState({ dialogSpots: event.target.value as string });
     };
@@ -157,16 +190,16 @@ export default class FungusDrawer extends React.Component
 
         const addFungusDialog = this.props.clickedLoc == null ? null : (
             <Dialog
-                className={styles.fungus_dialog_add}
+                className={styles.fungus_add_dialog}
                 open={this.props.clickedLoc != null}
                 onClose={this.handleAddFungusCloseModal}
             >
                 <DialogContent>
                     <DialogContentText>
-                        To add a new Fungus, please fill in the following fields.
+                        To add a new fungus, please fill in the following fields.
                         </DialogContentText>
 
-                    <form className={styles.fungus_dialog_add_form}
+                    <form className={styles.fungus_add_dialog_form}
                         id="dialogForm" onSubmit={this.handleAddFungusConfirmation}>
                         <TextField value={this.props.clickedLoc?.lat} variant="filled" fullWidth
                             id="lat" name="lat" label="Latitude" InputProps={{ readOnly: true }} />
@@ -209,7 +242,7 @@ export default class FungusDrawer extends React.Component
                     <Button onClick={this.handleAddFungusCloseModal} color="secondary">
                         Cancel
                     </Button>
-                    <Button type="submit" form="dialogForm" color="primary">
+                    <Button disabled={this.state.addingFungus} type="submit" form="dialogForm" color="primary">
                         Confirm
                     </Button>
                 </DialogActions>
@@ -217,7 +250,7 @@ export default class FungusDrawer extends React.Component
         );
 
 
-        const addFungusButton = !this.state.addEnabled ?
+        const addFungusButton = !this.state.addEnabled && fungi.length > 0 ?
             <ListItem button key="add_location" onClick={() => { this.handleAddFungusClicked() }}>
                 <ListItemIcon>{<AddLocationIcon />}</ListItemIcon>
                 <ListItemText primary="Add fungus" />

@@ -1,12 +1,15 @@
 
-import React from 'react';
+import { CssBaseline } from '@material-ui/core';
+import { ThemeProvider } from '@material-ui/core/styles';
+import 'leaflet/dist/leaflet.css';
 import App from 'next/app';
 import Head from 'next/head';
-import { ThemeProvider } from '@material-ui/core/styles';
-import { CssBaseline } from '@material-ui/core';
+import React from 'react';
+import 'react-confirm-alert/src/react-confirm-alert.css';
+import { Slide, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import theme from '../theme';
 
-import 'leaflet/dist/leaflet.css';
 
 
 export default class MyApp extends App {
@@ -26,6 +29,18 @@ export default class MyApp extends App {
                     {/* CssBaseline kickstart an elegant, consistent, and simple baseline to build upon. */}
                     <CssBaseline />
                     <Component {...pageProps} />
+                    <ToastContainer
+                        className="impct-toast"
+                        position="top-left"
+                        autoClose={3000}
+                        hideProgressBar
+                        newestOnTop
+                        closeOnClick
+                        rtl={false}
+                        draggable={false}
+                        pauseOnHover
+                        transition={Slide}
+                    />
                 </ThemeProvider>
             </React.Fragment>
         );
