@@ -58,9 +58,19 @@ app.get('/fungi/:fungusId', (req, res) => {
 
 // Delete a specific fungus
 app.delete('/fungi/:fungusId', async (req, res) => {
-    admin.firestore().collection(fungiCollection).doc(req.params.fungusId).delete().then((f) => {
-        res.status(204).send(`Fungus is deleted: ${f}`);
-    }).catch(error => res.status(400).send(`Cannot delete fungus: ${error}`));
+
+    admin.firestore().collection(fungiCollection).doc(req.params.fungusId).get().then(function (doc) {
+        if (doc.data()?.custom !== null) {
+            // fungus is custom >> can be deleted
+            admin.firestore().collection(fungiCollection).doc(req.params.fungusId).delete().then((f) => {
+                res.status(204).send(`Fungus is deleted: ${f}`);
+            }).catch(error => res.status(400).send(`Cannot delete fungus: ${error}`));
+        } else {
+            res.status(400).send(`Cannot delete fungus: not custom!`);
+        }
+    }).catch(function (error) {
+        res.status(400).send(`Cannot delete fungus: not available!`);
+    });
 });
 
 // Get all fungi

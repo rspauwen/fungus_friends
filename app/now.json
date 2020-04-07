@@ -1,0 +1,13 @@
+{
+    "version": 2,
+    "name": "fungus-friends",
+    "builds": [
+        {
+            "src": "package.json",
+            "use": "@now/next"
+        }
+    ],
+    "env": {
+        "UNSPLASH_ACCESS_KEY": "@unsplash-access-key"
+    }
+}
