@@ -1,6 +1,5 @@
 {
     "version": 2,
-    "name": "fungus-friends",
     "builds": [
         {
             "src": "package.json",

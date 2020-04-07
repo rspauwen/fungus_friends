@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, Divider, Drawer, FormControl, FormHelperText, IconButton, InputLabel, List, ListItem, ListItemIcon, ListItemText, MenuItem, Select, TextField, FormControlLabel, Checkbox } from '@material-ui/core';
+import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, Divider, Drawer, FormControl, FormControlLabel, FormHelperText, InputLabel, List, ListItem, ListItemIcon, ListItemText, MenuItem, Select, TextField } from '@material-ui/core';
 import AddLocationIcon from '@material-ui/icons/AddLocation';
 import BubbleChartIcon from '@material-ui/icons/BubbleChart';
 import ClearAllIcon from '@material-ui/icons/ClearAll';
@@ -6,16 +6,16 @@ import FilterListIcon from '@material-ui/icons/FilterList';
 import SearchIcon from '@material-ui/icons/SearchRounded';
 import React from 'react';
 import { confirmAlert } from 'react-confirm-alert';
+import MediaQuery from 'react-responsive';
 import { toast } from 'react-toastify';
 import { Fungus } from '../../model/fungus';
 import FungusService from '../../services/FungusService';
 import styles from './FungusDrawer.module.scss';
 
 export default class FungusDrawer extends React.Component
-    <{ fungi, clickedLoc, addFungusCallBack, filterCallback, refreshMapCallback, searchCallBack }> {
+    <{ fungi, clickedLoc, drawerOpen, addFungusCallBack, closeDrawerCallback, enableFiltersCallback, refreshMapCallback, searchCallBack }> {
 
     state = {
-        open: true,
         searchedFungi: [],
         searchTerm: '',
         selectedColor: '',
@@ -54,7 +54,7 @@ export default class FungusDrawer extends React.Component
                 selectedSpot != '' && selectedSpot != fungus.spots.toString();
         });
 
-        this.props.filterCallback(this.props.fungi);
+        this.props.enableFiltersCallback(this.props.fungi);
     };
 
     handleClearFilters = () => {
@@ -63,7 +63,7 @@ export default class FungusDrawer extends React.Component
         this.props.fungi.forEach((f) => {
             f.isHidden = false;
         });
-        this.props.filterCallback(this.props.fungi);
+        this.props.enableFiltersCallback(this.props.fungi);
     };
 
     handleClearSearch = () => {
@@ -82,6 +82,10 @@ export default class FungusDrawer extends React.Component
     handleCloseDrawer = () => {
         this.setState({ open: false });
     };
+
+    handleOpenDrawer = () => {
+        this.setState({ open: true })
+    }
 
     handleSearch = (e) => {
         const searchTerm = e.target.value;
@@ -314,7 +318,6 @@ export default class FungusDrawer extends React.Component
                                 <MenuItem value="">
                                     <em>*</em>
                                 </MenuItem>
-
                                 {spots.map((s) => (
                                     <MenuItem value={s} key={s}>
                                         <em>{s}</em>
@@ -361,17 +364,21 @@ export default class FungusDrawer extends React.Component
             </div>
         );
 
-
         return (
             <div>
                 <React.Fragment>
-                    <Drawer anchor='right'
-                        classes={{ root: styles.fungus_drawer, paper: styles.fungus_drawer_paper }}
-                        open={this.state.open}
-                        variant="permanent"
-                    >
-                        {drawerContent}
-                    </Drawer>
+                    <MediaQuery maxWidth={1440}>
+                        <Drawer classes={{ root: styles.fungus_drawer, paper: styles.fungus_drawer_paper }}
+                            anchor='right' open={this.props.drawerOpen} onClose={() => this.props.closeDrawerCallback()}>
+                            {drawerContent}
+                        </Drawer>
+                    </MediaQuery>
+                    <MediaQuery minWidth={1440}>
+                        <Drawer classes={{ root: styles.fungus_drawer, paper: styles.fungus_drawer_paper }}
+                            anchor='right' open={this.props.drawerOpen} variant="permanent">
+                            {drawerContent}
+                        </Drawer>
+                    </MediaQuery>
                 </React.Fragment>
             </div >
         );
