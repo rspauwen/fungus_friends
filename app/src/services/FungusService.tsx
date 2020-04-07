@@ -1,9 +1,7 @@
 import { Fungus } from "../model/fungus";
 import { toast } from "react-toastify";
 
-
 const FUNGI_ENDPOINT = 'https://fungus-friends.firebaseapp.com/api/v1/fungi';
-
 
 const FungusService = {
     async fetchFungi(): Promise<Array<Fungus>> {

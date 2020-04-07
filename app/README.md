@@ -4,7 +4,7 @@ All kinds of fungus friends can be found in the garden of SpronQ.
 With this project, they're displayed in a nice interactive map.
 
 ## How to run
- - first `npm i` and then `npm run dev`
+ - first `npm i` and then `npm run start`
 
 ## Bonus feature
  - Firebase API (/api folder)

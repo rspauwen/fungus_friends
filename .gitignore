@@ -9,3 +9,4 @@ package-lock.json
 config.js
 
 next.config.js
+.now

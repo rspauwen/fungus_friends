@@ -5,11 +5,11 @@ import ClearAllIcon from '@material-ui/icons/ClearAll';
 import FilterListIcon from '@material-ui/icons/FilterList';
 import SearchIcon from '@material-ui/icons/Search';
 import React from 'react';
+import { confirmAlert } from 'react-confirm-alert';
+import { toast } from 'react-toastify';
 import { Fungus } from '../../model/fungus';
 import FungusService from '../../services/FungusService';
 import styles from './FungusDrawer.module.scss';
-import { toast } from 'react-toastify';
-import { confirmAlert } from 'react-confirm-alert';
 
 export default class FungusDrawer extends React.Component
     <{ fungi, clickedLoc, addFungusCallBack, filterCallback, refreshMapCallback, searchCallBack }> {

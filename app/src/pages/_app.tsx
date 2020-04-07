@@ -10,8 +10,6 @@ import { Slide, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import theme from '../theme';
 
-
-
 export default class MyApp extends App {
     componentDidMount() {
     }
@@ -31,7 +29,7 @@ export default class MyApp extends App {
                     <Component {...pageProps} />
                     <ToastContainer
                         className="impct-toast"
-                        position="top-left"
+                        position="bottom-left"
                         autoClose={3000}
                         hideProgressBar
                         newestOnTop
