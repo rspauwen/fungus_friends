@@ -171,18 +171,12 @@ export default class FungusMap extends React.Component<MyProps, MyState> {
     render() {
         const fungi = this.state.fungi ?? [];
 
-        const menuButton = this.drawerRef.current == null || this.drawerRef.current.state.open ? null :
-            <Button onClick={() => { this.drawerRef.current.openDrawer() }}>
-                <MenuIcon />
-            </Button>
-
         return (
             <Container maxWidth="lg">
-                <Box my={4} style={{ display: "flex", justifyContent: "space-between" }}>
+                <Box my={4}>
                     <Typography variant="h4" component="h1" gutterBottom>
-                        Welcome to Ruvar's Fungus Friends Finder!
+                        Welcome to Ruvar's fungus finder!
                     </Typography>
-                    {menuButton}
                 </Box>
                 <Map
                     className={`${styles.fungus_map} ${this.state.addEnabled ? styles.add_enabled : ""}`}
@@ -198,9 +192,7 @@ export default class FungusMap extends React.Component<MyProps, MyState> {
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
 
-                    {/* {fungi.filter((f: Fungus) => !f.isHidden).map((fungus: Fungus, i) => ( */}
                     {fungi.map((f: Fungus, i) => { return !f.isHidden && this.state.markers != null ? this.state.markers[i] ?? null : null })}
-
                 </Map>
                 <FungusDrawer fungi={fungi}
                     clickedLoc={this.state.clickedLoc}

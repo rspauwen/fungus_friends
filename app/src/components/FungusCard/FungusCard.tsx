@@ -15,7 +15,6 @@ export default class FungusCard extends React.Component<{ fungus: Fungus, refres
         cardImageUrls: null,
     };
 
-
     async componentDidMount() {
         const unsplash = new Unsplash({
             accessKey: process.env.UNSPLASH_ACCESS_KEY
@@ -32,7 +31,6 @@ export default class FungusCard extends React.Component<{ fungus: Fungus, refres
                 return e;
             });
     }
-
 
     handleDeleteFungus = (fungus: Fungus) => {
         const deleteDialog = ({ onClose }) => {
@@ -63,7 +61,6 @@ export default class FungusCard extends React.Component<{ fungus: Fungus, refres
         confirmAlert({ customUI: deleteDialog })
     };
 
-
     render() {
         const fungus = this.state.fungus;
 
@@ -74,7 +71,7 @@ export default class FungusCard extends React.Component<{ fungus: Fungus, refres
 
         const customFungusLabel = fungus.isCustom ?
             <Typography variant="body2" color="textSecondary" component="p">
-                This fungus has recently been added!
+                This fungus has been added by someone!
             </Typography> : null;
 
         const removeCustomFungusButton = fungus.isCustom ?

@@ -1,9 +1,9 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, Divider, Drawer, FormControl, FormHelperText, InputLabel, List, ListItem, ListItemIcon, ListItemText, MenuItem, Select, TextField } from '@material-ui/core';
+import { Button, Dialog, DialogActions, DialogContent, DialogContentText, Divider, Drawer, FormControl, FormHelperText, IconButton, InputLabel, List, ListItem, ListItemIcon, ListItemText, MenuItem, Select, TextField, FormControlLabel, Checkbox } from '@material-ui/core';
 import AddLocationIcon from '@material-ui/icons/AddLocation';
 import BubbleChartIcon from '@material-ui/icons/BubbleChart';
 import ClearAllIcon from '@material-ui/icons/ClearAll';
 import FilterListIcon from '@material-ui/icons/FilterList';
-import SearchIcon from '@material-ui/icons/Search';
+import SearchIcon from '@material-ui/icons/SearchRounded';
 import React from 'react';
 import { confirmAlert } from 'react-confirm-alert';
 import { toast } from 'react-toastify';
@@ -22,44 +22,43 @@ export default class FungusDrawer extends React.Component
         selectedSpots: '',
         addEnabled: false,
         addFungusModalOpened: false,
-        addingFungus: false,
+        busyAddingFungus: false,
+        customFungiVisible: true,
         dialogColor: '',
         dialogSpots: '',
     };
 
-    openDrawer = () => {
-        this.setState({ open: true })
-    }
-
-    closeDrawer = () => {
-        this.setState({ open: false })
-    }
-
     handleFilterColor = (e) => {
         const selectedColor = e.target.value;
-        this.setState({ selectedColor: selectedColor })
-        this.handleFilter(true, selectedColor);
+        this.setState({ selectedColor: selectedColor }, this.updateFilters);
     };
 
     handleFilterSpots = (e) => {
         const selectedSpots = e.target.value;
-        this.setState({ selectedSpots: selectedSpots })
-        this.handleFilter(false, selectedSpots);
+        this.setState({ selectedSpots: selectedSpots }, this.updateFilters);
     };
 
-    handleFilter = (isColor: boolean, val: String) => {
-        const selectedColor = isColor ? val : this.state.selectedColor;
-        const selectedSpots = !isColor ? val : this.state.selectedSpots;
+    handleShowCustomFungi = (e) => {
+        const customFungiVisible = e.target.checked;
+        this.setState({ customFungiVisible: customFungiVisible }, this.updateFilters);
+    }
 
-        this.props.fungi.forEach((f) => {
-            f.isHidden = selectedColor != '' && f.color.toString() != selectedColor || selectedSpots != '' && f.spots.toString() != selectedSpots;
+    updateFilters = () => {
+        const selectedColor = this.state.selectedColor;
+        const selectedSpot = this.state.selectedSpots;
+        const customFungiVisible = this.state.customFungiVisible;
+
+        this.props.fungi.forEach((fungus: Fungus) => {
+            fungus.isHidden = !customFungiVisible && fungus.isCustom ||
+                selectedColor != '' && selectedColor != fungus.color.toString() ||
+                selectedSpot != '' && selectedSpot != fungus.spots.toString();
         });
 
         this.props.filterCallback(this.props.fungi);
     };
 
     handleClearFilters = () => {
-        this.setState({ selectedColor: '', selectedSpots: '' })
+        this.setState({ selectedColor: '', selectedSpots: '', customFungiVisible: true })
 
         this.props.fungi.forEach((f) => {
             f.isHidden = false;
@@ -70,6 +69,18 @@ export default class FungusDrawer extends React.Component
     handleClearSearch = () => {
         this.setState({ searchedFungi: [], searchTerm: '' })
         this.props.searchCallBack(null);
+    };
+
+    handleChangeColor = (event: React.ChangeEvent<{ value: unknown }>) => {
+        this.setState({ dialogColor: event.target.value as string });
+    };
+
+    handleChangeSpots = (event: React.ChangeEvent<{ value: unknown }>) => {
+        this.setState({ dialogSpots: event.target.value as string });
+    };
+
+    handleCloseDrawer = () => {
+        this.setState({ open: false });
     };
 
     handleSearch = (e) => {
@@ -114,7 +125,6 @@ export default class FungusDrawer extends React.Component
         confirmAlert({ customUI: unhideDialog })
     };
 
-
     handleAddFungusClicked = () => {
         this.handleClearFilters(); // fix
         this.setState({ addEnabled: true })
@@ -122,7 +132,7 @@ export default class FungusDrawer extends React.Component
     };
 
     handleAddFungusCloseModal = () => {
-        this.setState({ addEnabled: false });
+        this.setState({ addEnabled: false, dialogColor: '', dialogSpots: '' });
         this.props.addFungusCallBack(false);
     };
 
@@ -158,20 +168,12 @@ export default class FungusDrawer extends React.Component
             this.setState({ addingFungus: false });
 
             if (result == true) {
+                this.setState({ dialogColor: '', dialogSpots: '' });
                 this.handleAddFungusCloseModal();
                 this.props.refreshMapCallback();
             }
         });
     }
-
-    handleChangeColor = (event: React.ChangeEvent<{ value: unknown }>) => {
-        this.setState({ dialogColor: event.target.value as string });
-    };
-
-    handleChangeSpots = (event: React.ChangeEvent<{ value: unknown }>) => {
-        this.setState({ dialogSpots: event.target.value as string });
-    };
-
 
     render() {
         const fungi = this.props.fungi.filter((f) => !f.isHidden);
@@ -197,7 +199,7 @@ export default class FungusDrawer extends React.Component
                 <DialogContent>
                     <DialogContentText>
                         To add a new fungus, please fill in the following fields.
-                        </DialogContentText>
+                    </DialogContentText>
 
                     <form className={styles.fungus_add_dialog_form}
                         id="dialogForm" onSubmit={this.handleAddFungusConfirmation}>
@@ -242,17 +244,22 @@ export default class FungusDrawer extends React.Component
                     <Button onClick={this.handleAddFungusCloseModal} color="secondary">
                         Cancel
                     </Button>
-                    <Button disabled={this.state.addingFungus} type="submit" form="dialogForm" color="primary">
+                    <Button disabled={this.state.busyAddingFungus} type="submit" form="dialogForm" color="primary">
                         Confirm
                     </Button>
                 </DialogActions>
             </Dialog>
         );
 
+        const clearFiltersButton = hasNoFilter ? null :
+            <ListItem button disabled={hasNoFilter} key="filter_clear" onClick={() => { this.handleClearFilters() }}>
+                <ListItemIcon>{<ClearAllIcon />}</ListItemIcon>
+                <ListItemText primary="Clear filters" />
+            </ListItem>;
 
         const addFungusButton = !this.state.addEnabled && fungi.length > 0 ?
             <ListItem button key="add_location" onClick={() => { this.handleAddFungusClicked() }}>
-                <ListItemIcon>{<AddLocationIcon />}</ListItemIcon>
+                <ListItemIcon >{<AddLocationIcon />}</ListItemIcon>
                 <ListItemText primary="Add fungus" />
             </ListItem> : null
 
@@ -264,15 +271,16 @@ export default class FungusDrawer extends React.Component
                         <ListItemIcon>{<BubbleChartIcon />}</ListItemIcon>
                         <ListItemText secondary={`Fungi on map: ${fungi.length}`} />
                     </ListItem>
-
                     <Divider variant="middle" />
-
                     <ListItem key="fungus_drawer_filter">
                         <ListItemIcon>{<FilterListIcon />}</ListItemIcon>
                         <ListItemText primary="Filters" />
                     </ListItem>
+
+                    {clearFiltersButton}
+
                     <div className={styles.fungus_drawer_filter} key="filter_color">
-                        <FormControl fullWidth={true} variant="outlined">
+                        <FormControl fullWidth variant="outlined">
                             <InputLabel id="drawer_filter_color_label">Color</InputLabel>
                             <Select
                                 labelId="drawer_filter_color_label"
@@ -294,7 +302,7 @@ export default class FungusDrawer extends React.Component
                         </FormControl>
                     </div>
                     <div className={`${styles.fungus_drawer_filter}`} key="filter_spots">
-                        <FormControl fullWidth={true} variant="outlined">
+                        <FormControl fullWidth variant="outlined">
                             <InputLabel id="drawer_filter_spots_label">Spots</InputLabel>
                             <Select
                                 labelId="drawer_filter_spots_label"
@@ -316,10 +324,19 @@ export default class FungusDrawer extends React.Component
                             <FormHelperText>Filter by spots</FormHelperText>
                         </FormControl>
                     </div>
-                    <ListItem button disabled={hasNoFilter} key="filter_clear" onClick={() => { this.handleClearFilters() }}>
-                        <ListItemIcon>{<ClearAllIcon />}</ListItemIcon>
-                        <ListItemText primary="Clear filters" />
-                    </ListItem>
+                    <div className={`${styles.fungus_drawer_filter}`} key="filter_custom">
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={this.state.customFungiVisible}
+                                    onChange={this.handleShowCustomFungi}
+                                    name="customFungiCheckbox"
+                                    color="secondary"
+                                />
+                            }
+                            label="Show custom fungi"
+                        />
+                    </div>
 
                     <Divider variant="middle" />
 
@@ -327,6 +344,7 @@ export default class FungusDrawer extends React.Component
                         <ListItemIcon>{<SearchIcon />}</ListItemIcon>
                         <ListItemText primary="Search" />
                     </ListItem>
+                    {clearSearchButton}
                     <form className={styles.fungus_drawer_search} noValidate autoComplete="off">
                         <TextField value={this.state.searchTerm} label="Search by name" variant="outlined" onChange={this.handleSearch} />
                     </form>
@@ -335,7 +353,6 @@ export default class FungusDrawer extends React.Component
                             <ListItemText primary={!f.isHidden ? f.name : null} secondary={f.isHidden ? f.name : null} />
                         </ListItem>
                     ))}
-                    {clearSearchButton}
 
                     <Divider variant="middle" />
                     {addFungusButton}
@@ -351,9 +368,7 @@ export default class FungusDrawer extends React.Component
                     <Drawer anchor='right'
                         classes={{ root: styles.fungus_drawer, paper: styles.fungus_drawer_paper }}
                         open={this.state.open}
-                        onClose={this.closeDrawer}
                         variant="permanent"
-                    // elevation={0}
                     >
                         {drawerContent}
                     </Drawer>

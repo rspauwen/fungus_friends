@@ -1,16 +1,19 @@
 # Fungus Friends App
-
-All kinds of fungus friends can be found in the garden of SpronQ.
-With this project, they're displayed in a nice interactive map.
+All kinds of funky fungi can be found around SpronQ's office.
+This app is built to display them in a nice interactive map.
 
 ## How to run
- - first `npm i` and then `npm run start`
+ - first `npm i` in `/app` and then `npm run start`
 
-## Bonus feature
- - Firebase API (/api folder)
- - includes random fungus images
+## Bonus features
+ - a custom API (check `/api`)
+ - fetching random fungus images
  - you can also search by name
- - you can add your own fungi
- - you can also delete them!
+ - you can add your own fungi!
+ - you can also delete them!!
 
-# fungus_friends
+## Note
+Acces token for unsplash is not included in the repo.
+But you can see it working at the live demo :)
+
+# cheers, fungus_friends
