@@ -52,7 +52,7 @@ export default class FungusMap extends React.Component<MyProps, MyState> {
         fungi: null,
         markers: null,
         addEnabled: false,
-        drawerOpen: true,
+        drawerOpen: false,
     }
 
     private mapRef;
@@ -155,7 +155,7 @@ export default class FungusMap extends React.Component<MyProps, MyState> {
     handleClickOnMap = (e) => {
         if (this.state.addEnabled) {
             const clickedLoc = new LatLng(e.latlng.lat, e.latlng.lng);
-            this.setState({ clickedLoc: clickedLoc });
+            this.setState({ clickedLoc: clickedLoc, drawerOpen: true });
         }
     };
 
@@ -183,7 +183,7 @@ export default class FungusMap extends React.Component<MyProps, MyState> {
         const fungi = this.state.fungi ?? [];
 
         const menuButton = this.drawerRef.current != null && !this.state.drawerOpen ?
-            <Button onClick={() => { this.setState({ drawerOpen: true }); }}>
+            <Button onClick={() => { this.setState({ drawerOpen: true, addEnabled: false }); }}>
                 <MenuIcon />
             </Button> : null;
 

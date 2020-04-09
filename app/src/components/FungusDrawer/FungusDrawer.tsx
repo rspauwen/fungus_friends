@@ -132,6 +132,11 @@ export default class FungusDrawer extends React.Component
     handleAddFungusClicked = () => {
         this.handleClearFilters(); // fix
         this.setState({ addEnabled: true })
+
+        if (window.innerWidth < 1440) {
+            this.props.closeDrawerCallback();
+        }
+
         this.props.addFungusCallBack(true);
     };
 
