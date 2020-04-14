@@ -1,12 +1,16 @@
 .fungus_card {
-    width: 400px;
+    min-width: 300px;
+    max-width: 400px;
 
     &_image {
         position: relative;
         opacity: 0.5;
         transition: opacity 1s ease-in-out;
-        // height: 200px;
-        width: 400px;
+        width: 100%;
+
+        img {
+            width: inherit;
+        }
     }
 
     &:hover {
@@ -17,6 +21,14 @@
 
     a {
         text-decoration: none;
+    }
+
+    @media (max-width: 1439px) {
+        width: 75vw;
+
+        &_image img {
+            max-height: 50vh;
+        }
     }
 }
 

@@ -8,9 +8,9 @@ This app is built to display them in a nice interactive map.
 ## Bonus features
  - a custom API (check `/api`)
  - fetching random fungus images
- - you can also search by name
- - you can add your own fungi!
- - you can also delete them!!
+ - you can also search by their name
+ - you can add & delete added fungi!
+ - you can even edit added fungi!!
 
 ## Note
 Acces token for unsplash is not included in the repo.

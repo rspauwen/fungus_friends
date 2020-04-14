@@ -26,13 +26,6 @@ $defaultPixels: 12px;
     }
 }
 
-.fungus_add_dialog {
-    &_form > div {
-        height: 60px;
-        margin-bottom: $defaultPixels;
-    }
-}
-
 .fungus_unhide_dialog {
     &_buttons {
         display: flex;

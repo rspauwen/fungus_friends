@@ -3,11 +3,12 @@ import MenuIcon from '@material-ui/icons/Menu';
 import L from 'leaflet';
 import React from 'react';
 import { Map, Marker, Popup, TileLayer, Tooltip } from 'react-leaflet';
-import { Fungus } from '../../model/fungus';
+import { Color, Fungus, Spots } from '../../model/fungus';
 import { LatLng } from '../../model/latlng';
 import FungusService from '../../services/FungusService';
 import theme from '../../theme';
 import FungusCard from '../FungusCard/FungusCard';
+import FungusDialog from '../FungusDialog/FungusDialog';
 import FungusDrawer from '../FungusDrawer/FungusDrawer';
 import styles from './FungusMap.module.scss';
 
@@ -37,10 +38,14 @@ interface MyProps { }
 interface MyState {
     currentLoc: LatLng,
     clickedLoc: LatLng,
+    clickedFungus: Fungus,
     fungi: Array<Fungus>,
     markers: Array<Marker>,
+    colors: Array<String>,
+    spots: Array<String>,
     addEnabled: boolean,
     drawerOpen: boolean,
+    showDialog: boolean,
 }
 
 export default class FungusMap extends React.Component<MyProps, MyState> {
@@ -49,10 +54,14 @@ export default class FungusMap extends React.Component<MyProps, MyState> {
             52.081059,
             5.235720),
         clickedLoc: null,
+        clickedFungus: null,
         fungi: null,
         markers: null,
+        colors: null,
+        spots: null,
         addEnabled: false,
         drawerOpen: false,
+        showDialog: false,
     }
 
     private mapRef;
@@ -67,9 +76,20 @@ export default class FungusMap extends React.Component<MyProps, MyState> {
     }
 
     async componentDidMount() {
+        var colors: string[] = [];
+        for (var c in Color) {
+            if (typeof Color[c] === 'number') colors.push(c);
+        }
+        var spots: string[] = [];
+        for (var s in Spots) {
+            if (typeof Spots[s] === 'number') spots.push(s);
+        }
+
         this.setState({
             drawerOpen: window.innerWidth >= 1440,
-            fungi: await FungusService.fetchFungi()
+            fungi: await FungusService.fetchFungi(),
+            colors: colors,
+            spots: spots
         }, this.addMarkers);
 
         document.addEventListener("keydown", (e) => {
@@ -93,9 +113,9 @@ export default class FungusMap extends React.Component<MyProps, MyState> {
                     key={fungus.id}
                     icon={!fungus.isCustom ? markerIcon : markerIconCustom}
                     position={[fungus.latlng.lat, fungus.latlng.lng]}
-                    ref={this.handleMarkerRef.bind(this, i)}
+                    ref={this.bindMarkerRef.bind(this, i)}
                     onclick={() => {
-                        this.handleMarkerClick(i);
+                        this.onMarkerClick(i);
                     }}
                 >
                     <Tooltip>
@@ -104,7 +124,9 @@ export default class FungusMap extends React.Component<MyProps, MyState> {
                         </span>
                     </Tooltip>
                     <Popup maxWidth="auto">
-                        <FungusCard fungus={fungus} refreshMapCallback={this.refreshMapCallbackFunction} />
+                        <FungusCard fungus={fungus}
+                            editFungusCallback={this.editFungusCallbackFunction}
+                            refreshMapCallback={this.refreshMapCallbackFunction} />
                     </Popup>
                 </Marker>
             )) : [];
@@ -114,7 +136,26 @@ export default class FungusMap extends React.Component<MyProps, MyState> {
         });
     }
 
-    addFungusCallbackFunction = (enableAdd: boolean) => {
+    bindMarkerRef = (index, node) => {
+        this.markerRefs[index] = node;
+    };
+
+    // Quite a collection of callback functions already...
+
+    closeDialogCallbackFunction = () => {
+        this.setState({ clickedFungus: null, showDialog: false, addEnabled: false });
+    }
+
+    closeDrawerCallbackFunction = () => {
+        this.setState({ drawerOpen: false });
+    }
+
+    editFungusCallbackFunction = (fungus: Fungus) => {
+        this.mapRef.current.leafletElement.closePopup();
+        this.setState({ clickedFungus: fungus, showDialog: true });
+    }
+
+    enableAddFungusCallbackFunction = (enableAdd: boolean) => {
         if (enableAdd) {
             this.setState({ addEnabled: true });
         } else {
@@ -122,20 +163,16 @@ export default class FungusMap extends React.Component<MyProps, MyState> {
         }
     }
 
-    closeDrawerCallbackFunction = () => {
-        this.setState({ drawerOpen: false });
-    }
-
-    enableFilterCallbackFunction = (filteredFungi: Array<Fungus>) => {
-        this.setState({ fungi: filteredFungi })
-    }
-
-    refreshMapCallbackFunction = () => {
-        FungusService.fetchFungi().then((fetchedFungi) => {
-            this.setState({
-                fungi: fetchedFungi
-            }, this.addMarkers);
-        });
+    refreshMapCallbackFunction = (fungi: Array<Fungus>) => {
+        if (fungi == null) {
+            FungusService.fetchFungi().then((fetchedFungi) => {
+                this.setState({
+                    fungi: fetchedFungi
+                }, this.addMarkers);
+            });
+        } else {
+            this.setState({ fungi: fungi });
+        }
     }
 
     searchCallbackFunction = (fungus: Fungus) => {
@@ -149,47 +186,45 @@ export default class FungusMap extends React.Component<MyProps, MyState> {
             this.mapRef.current.leafletElement.closePopup();
             return;
         }
-        this.handleMarkerClick(index);
+        this.onMarkerClick(index);
     }
 
-    handleClickOnMap = (e) => {
+    onClickOnMap = (e) => {
         if (this.state.addEnabled) {
             const clickedLoc = new LatLng(e.latlng.lat, e.latlng.lng);
-            this.setState({ clickedLoc: clickedLoc, drawerOpen: true });
+            this.setState({ clickedLoc: clickedLoc, showDialog: true });
         }
     };
 
-    handleMarkerClick(index) {
+    onMarkerClick(index) {
         const markerPosition = this.state.markers[index].props.position;
-        const cardOffset = 0.005;
+        const popupOffset = 0.001;
 
-        this.setState(
-            {
-                currentLoc: new LatLng(markerPosition[0] + cardOffset, markerPosition[1]),
-            },
-            () => {
-                if (this.markerRefs[index]) {
-                    this.markerRefs[index].leafletElement.openPopup();
-                }
-            }
-        );
+        if (this.markerRefs[index]) {
+            this.markerRefs[index].leafletElement.openPopup();
+        }
+
+        this.setState({ currentLoc: new LatLng(markerPosition[0] + popupOffset, markerPosition[1]) });
     }
-
-    handleMarkerRef = (index, node) => {
-        this.markerRefs[index] = node;
-    };
 
     render() {
         const fungi = this.state.fungi ?? [];
 
-        const menuButton = this.drawerRef.current != null && !this.state.drawerOpen ?
+        const fungusDialog = this.state.showDialog ?
+            <FungusDialog
+                mapState={this.state}
+                closeDialogCallback={this.closeDialogCallbackFunction}
+                refreshMapCallback={this.refreshMapCallbackFunction} />
+            : null
+
+        const menuButton = this.drawerRef.current != null && window.innerWidth < 1440 ?
             <Button onClick={() => { this.setState({ drawerOpen: true, addEnabled: false }); }}>
                 <MenuIcon />
             </Button> : null;
 
         return (
             <Container maxWidth="lg">
-                <Box my={4} style={{ display: "flex", justifyContent: "space-between" }}>
+                <Box my={4} className={styles.fungus_map_header}>
                     <Typography variant="h4" component="h1" gutterBottom>
                         {`Welcome to ${window.innerWidth >= 800 ? "Ruvar's" : ""} fungus finder!`}
                     </Typography>
@@ -202,7 +237,7 @@ export default class FungusMap extends React.Component<MyProps, MyState> {
                     ref={this.mapRef}
                     setView={true}
                     zoom={17}
-                    onClick={this.handleClickOnMap}
+                    onClick={this.onClickOnMap}
                 >
                     <TileLayer
                         attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
@@ -211,17 +246,18 @@ export default class FungusMap extends React.Component<MyProps, MyState> {
 
                     {fungi.map((f: Fungus, i) => { return !f.isHidden && this.state.markers != null ? this.state.markers[i] ?? null : null })}
                 </Map>
+
                 <FungusDrawer
-                    fungi={fungi}
-                    clickedLoc={this.state.clickedLoc}
-                    drawerOpen={this.state.drawerOpen}
-                    addFungusCallBack={this.addFungusCallbackFunction}
+                    mapState={this.state}
                     closeDrawerCallback={this.closeDrawerCallbackFunction}
-                    enableFiltersCallback={this.enableFilterCallbackFunction}
+                    enableAddFungusCallback={this.enableAddFungusCallbackFunction}
                     refreshMapCallback={this.refreshMapCallbackFunction}
                     searchCallBack={this.searchCallbackFunction}
-                    ref={this.drawerRef} />
-            </Container>
+                    ref={this.drawerRef}
+                />
+
+                {fungusDialog}
+            </Container >
         );
     }
 }

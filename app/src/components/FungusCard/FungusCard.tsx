@@ -1,17 +1,18 @@
 import { Card, CardActionArea, CardActions, CardContent, IconButton, Typography } from '@material-ui/core';
 import DeleteIcon from '@material-ui/icons/Delete';
+import EditIcon from '@material-ui/icons/Edit';
 import SearchIcon from '@material-ui/icons/SearchRounded';
 import React from 'react';
 import { confirmAlert } from 'react-confirm-alert';
+import { toast } from 'react-toastify';
 import Unsplash, { toJson } from 'unsplash-js';
 import { Fungus } from '../../model/fungus';
 import FungusService from '../../services/FungusService';
 import styles from './FungusCard.module.scss';
 
-export default class FungusCard extends React.Component<{ fungus: Fungus, refreshMapCallback }> {
+export default class FungusCard extends React.Component<{ fungus: Fungus, editFungusCallback, refreshMapCallback }> {
 
     state = {
-        fungus: this.props.fungus,
         cardImageUrls: null,
     };
 
@@ -40,9 +41,12 @@ export default class FungusCard extends React.Component<{ fungus: Fungus, refres
             const handleClickedYes = () => {
                 onClose();
                 // delete custom fungus from our firebase
-                FungusService.deleteFungus(fungus).then((result) => {
-                    if (result == true) {
+                FungusService.deleteFungus(fungus).then((deleted) => {
+                    if (deleted) {
+                        toast.success(`Fungus "${fungus.name}" has been deleted!`);
                         this.props.refreshMapCallback();
+                    } else {
+                        toast.error("Oops, failed to delete fungus!");
                     }
                 });
             }
@@ -61,23 +65,32 @@ export default class FungusCard extends React.Component<{ fungus: Fungus, refres
         confirmAlert({ customUI: deleteDialog })
     };
 
+    handleEditFungus = (fungus: Fungus) => {
+        this.props.editFungusCallback(fungus);
+    };
+
     render() {
-        const fungus = this.state.fungus;
+        const fungus = this.props.fungus;
 
         const cardImage = this.state.cardImageUrls == null ? null :
             <div className={styles.fungus_card_image}><img src={this.state.cardImageUrls.small} alt="random fungus image" /></div>
 
-        const searchUrl = `https://www.google.com/search?q=fungus+%22${this.state.fungus.name.replace(' ', '+')}%22`;
+        const searchUrl = `https://www.google.com/search?q=fungus+%22${fungus.name.replace(' ', '+')}%22`;
 
         const customFungusLabel = fungus.isCustom ?
             <Typography variant="body2" color="textSecondary" component="p">
-                This fungus has been added by someone!
+                This fungus has been added recently!
             </Typography> : null;
 
-        const removeCustomFungusButton = fungus.isCustom ?
-            <IconButton aria-label="delete" color="secondary" onClick={() => { this.handleDeleteFungus(fungus) }}>
-                <DeleteIcon />
-            </IconButton>
+        const editAndDeleteButtons = fungus.isCustom ?
+            <div>
+                <IconButton aria-label="edit" color="secondary" onClick={() => { this.handleEditFungus(fungus) }}>
+                    <EditIcon />
+                </IconButton>
+                <IconButton aria-label="delete" color="secondary" onClick={() => { this.handleDeleteFungus(fungus) }}>
+                    <DeleteIcon />
+                </IconButton>
+            </div>
             : null;
 
         return (
@@ -89,8 +102,8 @@ export default class FungusCard extends React.Component<{ fungus: Fungus, refres
                             {fungus.name}
                         </Typography>
                         <Typography variant="body1" color="textSecondary" component="p">
-                            Spots: {fungus.spots}<br />
-                        Color: {fungus.color.toString().toLowerCase()}
+                            Color: {fungus.color.toString().toLowerCase()}<br />
+                            Spots: {fungus.spots}
                         </Typography>
                         {customFungusLabel}
                     </CardContent>
@@ -101,7 +114,7 @@ export default class FungusCard extends React.Component<{ fungus: Fungus, refres
                             <SearchIcon />
                         </IconButton>
                     </a>
-                    {removeCustomFungusButton}
+                    {editAndDeleteButtons}
                 </CardActions>
             </Card>
         );

@@ -1,5 +1,4 @@
 import { Fungus } from "../model/fungus";
-import { toast } from "react-toastify";
 
 const FUNGI_ENDPOINT = 'https://fungus-friends.firebaseapp.com/api/v1/fungi';
 
@@ -48,14 +47,40 @@ const FungusService = {
             const response = await fetch(FUNGI_ENDPOINT, requestOptions);
 
             if (response.status == 201) {
-                toast.success(`Fungus "${fungus.name}" has been added!`);
                 return true;
             }
         } catch (e) {
             console.log(e);
         };
 
-        toast.error("Oops, failed to add fungus!");
+        return false;
+    },
+
+    async editFungus(fungus: Fungus): Promise<boolean> {
+        try {
+            const fungusBody = {
+                color: fungus.color,
+                lat: fungus.latlng.lat,
+                lng: fungus.latlng.lng,
+                name: fungus.name,
+                spots: fungus.spots,
+                custom: true
+            }
+
+            const requestOptions = {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fungusBody })
+            };
+
+            const response = await fetch(`${FUNGI_ENDPOINT}/${fungus.id}`, requestOptions);
+
+            if (response.status == 204) {
+                return true;
+            }
+        } catch (e) {
+            console.log(e);
+        };
         return false;
     },
 
@@ -64,14 +89,11 @@ const FungusService = {
             const response = await fetch(`${FUNGI_ENDPOINT}/${fungus.id}`, { method: 'delete' });
 
             if (response.status == 204) {
-                toast.success(`Fungus "${fungus.name}" has been deleted!`);
                 return true;
             }
         } catch (e) {
             console.log(e);
         };
-
-        toast.error("Oops, failed to delete fungus!");
         return false;
     }
 };

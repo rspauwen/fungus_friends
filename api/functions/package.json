@@ -4,7 +4,7 @@
   "description": "Fungus Friends Map App API",
   "license": "ISC",
   "engines": {
-    "node": "12.x"
+    "node": "10"
   },
   "scripts": {
     "lint": "tslint --project tsconfig.json",

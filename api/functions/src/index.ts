@@ -44,7 +44,7 @@ app.post('/fungi', async (req, res) => {
         res.status(201).send(`Created a new fungus: ${newFungusDoc.id}`);
     } catch (error) {
         console.log(error, req.body);
-        res.status(400).send(`Fungus needs a name, color, spots & latlng!`)
+        res.status(400).send(`Failed to add fungus: ${error}`);
     }
 });
 
@@ -53,7 +53,7 @@ app.get('/fungi/:fungusId', (req, res) => {
     firestoreHelper
         .getDocument(db, fungiCollection, req.params.fungusId)
         .then(doc => res.status(200).send(doc))
-        .catch(error => res.status(400).send(`Cannot get fungus: ${error}`));
+        .catch(error => res.status(400).send(`Failed to get fungus: ${error}`));
 });
 
 // Delete a specific fungus
@@ -69,8 +69,24 @@ app.delete('/fungi/:fungusId', async (req, res) => {
             res.status(400).send(`Cannot delete fungus: not custom!`);
         }
     }).catch(function (error) {
-        res.status(400).send(`Cannot delete fungus: not available!`);
+        console.log(error);
+        res.status(400).send(`Failed to delete fungus: ${error}`);
     });
+});
+
+// Edit a specific fungus
+app.put('/fungi/:fungusId', async (req, res) => {
+    const body = req.body['fungusBody'];
+
+    admin.firestore().collection(fungiCollection)
+        .doc(req.params.fungusId).update({
+            color: body['color'],
+            latlng: new admin.firestore.GeoPoint(body['lat'], body['lng']),
+            name: body['name'],
+            spots: body['spots'],
+        })
+        .then(doc => res.status(204).send(doc))
+        .catch(error => res.status(400).send(`Failed to edit fungus: ${error}`));
 });
 
 // Get all fungi
@@ -78,5 +94,5 @@ app.get('/fungi', (req, res) => {
     firestoreHelper
         .backup(db, fungiCollection)
         .then(data => res.status(200).send(data))
-        .catch(error => res.status(400).send(`Cannot get fungi: ${error}`));
+        .catch(error => res.status(400).send(`Failed to get fungi: ${error}`));
 });

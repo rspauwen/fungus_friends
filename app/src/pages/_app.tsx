@@ -11,9 +11,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import theme from '../theme';
 
 export default class MyApp extends App {
-    componentDidMount() {
-    }
-
     render() {
         const { Component, pageProps } = this.props;
 
